@@ -16,7 +16,8 @@ static constexpr float cb = 1.0f;  // Conc. of fluid in tool before mixing.
 static const char *kFileResults = "/concentrations.csv";  // Output file in ~.
 
 // Updates all `n` concentrations in `cg[]`.
-void Update(int n, float vw, float cg[n], float vb, float cb) {
+void Update(const int& n, const float& vw, float cg[n],
+            const float& vb, float cb) {
   float vg = vw / n;
   float vmix = vg + vb;
   for (int g = 0; g < n; g++) {
@@ -27,7 +28,7 @@ void Update(int n, float vw, float cg[n], float vb, float cb) {
 
 // Runs `rounds` iterations with `n` containers.
 // Returns a string of the results of all rounds.
-std::string Simulate(int n, int rounds) {
+std::string Simulate(const int& n, const int& rounds) {
   float _cg[n];
   for (int g = 0; g < n; g++) {
     _cg[g] = cg;
@@ -42,7 +43,7 @@ std::string Simulate(int n, int rounds) {
 }
 
 // Saves a `results` string to `filename`.
-void WriteResults(std::string results, std::string filename) {
+void WriteResults(const std::string& results, const std::string& filename) {
   std::ofstream file;
   file.open(filename);
   file << "Containers, Iteration, Concentration" << std::endl;
