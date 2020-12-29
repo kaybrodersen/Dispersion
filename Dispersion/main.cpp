@@ -20,7 +20,7 @@ void Update(const int& n, const float& vw, float cg[n],
             const float& vb, float cb) {
   float vg = vw / n;
   float vmix = vg + vb;
-  for (int g = 0; g < n; ++g) {
+  for (int g {0}; g < n; ++g) {
     cg[g] = vg / vmix * cg[g] + vb / vmix * cb;
     cb = cg[g];
   }
@@ -30,11 +30,11 @@ void Update(const int& n, const float& vw, float cg[n],
 // Returns a string of the results of all rounds.
 std::string Simulate(const int& n, const int& rounds) {
   float _cg[n];
-  for (int g = 0; g < n; ++g) {
+  for (int g {0}; g < n; ++g) {
     _cg[g] = cg;
   }
   std::string result = "";
-  for (int i = 1; i <= rounds; ++i) {
+  for (int i {1}; i <= rounds; ++i) {
     Update(n, vw, _cg, vb, cb);
     result = result + std::to_string(n) + ", " + std::to_string(i) + ", " +
     std::to_string(_cg[n - 1]) + "\n";
@@ -58,7 +58,7 @@ int main() {
   constexpr int rounds = 1000;
   constexpr int ns[] = {1, 2, 3, 10, 100};
   std::string results = "";
-  for (auto i = 0; i < sizeof(ns) / sizeof(int); ++i) {
+  for (auto i {0}; i < sizeof(ns) / sizeof(int); ++i) {
     results += dispersion::Simulate(ns[i], rounds);
   }
   
