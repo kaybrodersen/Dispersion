@@ -2,24 +2,26 @@
 // Author: khbrodersen@gmail.com.
 
 #include <iostream>
-#include <fstream>
-#include <stdlib.h>
-#include <string>
+#include <vector>
+
+// [[Rcpp::plugins(cpp11)]]
+#include <Rcpp.h>
 
 namespace dispersion {
 
-static constexpr float vw = 100.0f;  // Total volume of water.
-static constexpr float cg = 0.0f;  // Initial color concentration in water.
-static constexpr float vb = 0.5f;  // Volume of fluid in tool.
-static constexpr float cb = 1.0f;  // Conc. of fluid in tool before mixing.
+static const std::vector<int> ns = {1, 2, 3, 10, 100};  // Containers.
+static constexpr int rounds = 1000;  // Number of iterations.
 
-static const char *kFileResults = "/concentrations.csv";  // Output file in ~.
+static constexpr double vw = 100.0f;  // Total volume of water.
+static constexpr double cg = 0.0f;  // Initial color concentration in water.
+static constexpr double vb = 0.5f;  // Volume of fluid in tool.
+static constexpr double cb = 1.0f;  // Conc. of fluid in tool before mixing.
 
 // Updates all `n` concentrations in `cg[]`.
-void Update(const int& n, const float& vw, float cg[n],
-            const float& vb, float cb) {
-  float vg = vw / n;
-  float vmix = vg + vb;
+void Update(const int& n, const double& vw, double cg[n],
+            const double& vb, double cb) {
+  double vg = vw / n;
+  double vmix = vg + vb;
   for (int g {0}; g < n; ++g) {
     cg[g] = vg / vmix * cg[g] + vb / vmix * cb;
     cb = cg[g];
@@ -27,44 +29,58 @@ void Update(const int& n, const float& vw, float cg[n],
 }
 
 // Runs `rounds` iterations with `n` containers.
-// Returns a string of the results of all rounds.
-std::string Simulate(const int& n, const int& rounds) {
-  float _cg[n];
+// Returns a vector of `rounds` concentrations.
+std::vector<double> Simulate(const int& n, const int& rounds) {
+  double _cg[n];
   for (int g {0}; g < n; ++g) {
     _cg[g] = cg;
   }
-  std::string result = "";
+  std::vector<double> cbs(rounds);
   for (int i {1}; i <= rounds; ++i) {
     Update(n, vw, _cg, vb, cb);
-    result = result + std::to_string(n) + ", " + std::to_string(i) + ", " +
-    std::to_string(_cg[n - 1]) + "\n";
+    cbs[i] = _cg[n - 1];
   }
-  return result;
-}
-
-// Saves a `results` string to `filename`.
-void WriteResults(const std::string& results, const std::string& filename) {
-  std::ofstream file;
-  file.open(filename);
-  file << "Containers, Iteration, Concentration" << std::endl;
-  file << results;
-  file.close();
+  return cbs;
 }
 
 }  // namespace dispersion
 
-int main() {
+// [[Rcpp::export]]
+Rcpp::DataFrame Run() {
+  // Prepare accumulators.
+  std::vector<int> result_containers;
+  std::vector<int> result_iteration;
+  std::vector<double> result_concentration;
+
   // Simulate `n` containers with `rounds` iterations.
-  constexpr int rounds = 1000;
-  constexpr int ns[] = {1, 2, 3, 10, 100};
-  std::string results = "";
-  for (auto i {0}; i < sizeof(ns) / sizeof(int); ++i) {
-    results += dispersion::Simulate(ns[i], rounds);
+  for (int s {0}; s < dispersion::ns.size(); ++s) {
+    for (int r {1}; r <= dispersion::rounds; ++r) {
+      result_containers.push_back(dispersion::ns[s]);
+      result_iteration.push_back(r);
+    }
+    std::vector<double> current = dispersion::Simulate(dispersion::ns[s],
+                                                       dispersion::rounds);
+    result_concentration.insert(result_concentration.end(),
+                                current.begin(), current.end());
   }
-  
-  // Store results on disk.
-  const char* home_dir = getenv("HOME");
-  std::string filename = std::string(home_dir) + dispersion::kFileResults;
-  dispersion::WriteResults(results, filename);
-  return 0;
+  Rcpp::DataFrame result = Rcpp::DataFrame::create(
+    Rcpp::Named("Containers") = result_containers,
+    Rcpp::_["Iteration"] = result_iteration,
+    Rcpp::_["Concentration"] = result_concentration
+  );
+  return result;
 }
+
+/*** R
+library(dplyr)
+library(ggplot2)
+
+result = Run()
+
+result %>%
+  dplyr::mutate(Containers = as.factor(Containers)) %>%
+  ggplot(aes(x = Iteration, y = Concentration, color = Containers)) +
+  theme_bw(base_size = 20) +
+  geom_line(size = 1) +
+  ylab("Remaining concentration")
+*/
