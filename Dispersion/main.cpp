@@ -9,19 +9,19 @@
 
 namespace dispersion {
 
-static const std::vector<int> ns = {1, 2, 3, 10, 100};  // Containers.
-static constexpr int rounds = 1000;  // Number of iterations.
+static const std::vector<int> ns {1, 2, 3, 10, 100};  // Containers.
+static constexpr int rounds {1000};  // Number of iterations.
 
-static constexpr double vw = 100.0f;  // Total volume of water.
-static constexpr double cg = 0.0f;  // Initial color concentration in water.
-static constexpr double vb = 0.5f;  // Volume of fluid in tool.
-static constexpr double cb = 1.0f;  // Conc. of fluid in tool before mixing.
+static constexpr double vw {100.0};  // Total volume of water.
+static constexpr double cg {0.0};  // Initial color concentration in water.
+static constexpr double vb {0.5};  // Volume of fluid in tool.
+static constexpr double cb {1.0};  // Conc. of fluid in tool before mixing.
 
 // Updates all `n` concentrations in `cg[]`.
 void Update(const int& n, const double& vw, double cg[n],
             const double& vb, double cb) {
-  double vg = vw / n;
-  double vmix = vg + vb;
+  double vg {vw / n};
+  double vmix {vg + vb};
   for (int g {0}; g < n; ++g) {
     cg[g] = vg / vmix * cg[g] + vb / vmix * cb;
     cb = cg[g];
@@ -79,7 +79,7 @@ result = Run()
 
 result %>%
   dplyr::mutate(Containers = as.factor(Containers)) %>%
-  ggplot(aes(x = Iteration, y = Concentration, color = Containers)) +
+  ggplot(aes(Iteration, Concentration, color = Containers)) +
   theme_bw(base_size = 20) +
   geom_line(size = 1) +
   ylab("Remaining concentration")
